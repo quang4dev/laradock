@@ -1,0 +1,242 @@
+log:
+  level: INFO
+
+entryPoints:
+  web:
+    # http
+    address: ":80"
+
+  web-secure:
+    # https
+    address: ":443"
+
+certificatesResolvers:
+  letsencrypt:
+    # https://docs.traefik.io/master/https/acme/#lets-encrypt
+    acme:
+      email: "admin@bambooship.vn"
+      storage: /etc/traefik/acme/acme.json
+      # https://docs.traefik.io/master/https/acme/#httpchallenge
+      httpChallenge:
+        entryPoint: web
+
+http:
+  routers:
+    api-router:
+      rule: "Host(`api.bambooship.vn`)"
+      entryPoints:
+        - web
+      middlewares:
+        - redirect
+        - csrf
+      service: workspace
+
+    api-secure-router:
+      rule: "Host(`api.bambooship.vn`)"
+      entryPoints:
+        - web-secure
+      middlewares:
+        - csrf
+      service: workspace
+      tls:
+        # https://docs.traefik.io/master/routing/routers/#certresolver
+        certResolver: letsencrypt
+
+    rabbitmq-router:
+      rule: "Host(`rabbitmq.bambooship.vn`)"
+      entryPoints:
+        - web
+      middlewares:
+        - redirect
+        - csrf
+      service: rabbitmq
+
+    rabbitmq-secure-router:
+      rule: "Host(`rabbitmq.bambooship.vn`)"
+      entryPoints:
+        - web-secure
+      middlewares:
+        - csrf
+      service: rabbitmq
+      tls:
+        # https://docs.traefik.io/master/routing/routers/#certresolver
+        certResolver: letsencrypt
+
+    shop-router:
+      rule: "Host(`shop.bambooship.vn`)"
+      entryPoints:
+        - web
+      middlewares:
+        - redirect
+        - csrf
+      service: shop
+
+    shop-secure-router:
+      rule: "Host(`shop.bambooship.vn`)"
+      entryPoints:
+        - web-secure
+      middlewares:
+        - csrf
+      service: shop
+      tls:
+        # https://docs.traefik.io/master/routing/routers/#certresolver
+        certResolver: letsencrypt
+
+    tracking-router:
+      rule: "Host(`tracking.bambooship.vn`)"
+      entryPoints:
+        - web
+      middlewares:
+        - redirect
+        - csrf
+      service: tracking
+
+    tracking-secure-router:
+      rule: "Host(`tracking.bambooship.vn`)"
+      entryPoints:
+        - web-secure
+      middlewares:
+        - csrf
+      service: tracking
+      tls:
+        # https://docs.traefik.io/master/routing/routers/#certresolver
+        certResolver: letsencrypt
+
+    admin-router:
+      rule: "Host(`admin.bambooship.vn`)"
+      entryPoints:
+        - web
+      middlewares:
+        - redirect
+        - csrf
+      service: admin
+
+    admin-secure-router:
+      rule: "Host(`admin.bambooship.vn`)"
+      entryPoints:
+        - web-secure
+      middlewares:
+        - csrf
+      service: admin
+      tls:
+        # https://docs.traefik.io/master/routing/routers/#certresolver
+        certResolver: letsencrypt
+
+    pickup-portal-router:
+      rule: "Host(`pickup-portal.bambooship.vn`)"
+      entryPoints:
+        - web
+      middlewares:
+        - redirect
+        - csrf
+      service: pickup-portal
+
+    pickup-portal-secure-router:
+      rule: "Host(`pickup-portal.bambooship.vn`)"
+      entryPoints:
+        - web-secure
+      middlewares:
+        - csrf
+      service: pickup-portal
+      tls:
+        # https://docs.traefik.io/master/routing/routers/#certresolver
+        certResolver: letsencrypt
+
+    web-router:
+      rule: "(Host(`bambooship.vn`) || Host(`www.bambooship.vn`))"
+      entryPoints:
+        - web
+      middlewares:
+        - redirect
+        - csrf
+      service: web
+
+    web-secure-router:
+      rule: "(Host(`bambooship.vn`) || Host(`www.bambooship.vn`))"
+      entryPoints:
+        - web-secure
+      middlewares:
+        - csrf
+      service: web
+      tls:
+        # https://docs.traefik.io/master/routing/routers/#certresolver
+        certResolver: letsencrypt
+
+    grafana-router:
+      rule: "Host(`monitor.bambooship.vn`)"
+      entryPoints:
+        - web
+      middlewares:
+        - redirect
+        - csrf
+      service: grafana
+
+    grafana-secure-router:
+      rule: "Host(`monitor.bambooship.vn`)"
+      entryPoints:
+        - web-secure
+      middlewares:
+        - csrf
+      service: grafana
+      tls:
+        # https://docs.traefik.io/master/routing/routers/#certresolver
+        certResolver: letsencrypt
+
+  middlewares:
+    redirect:
+      # https://docs.traefik.io/master/middlewares/redirectscheme/
+      redirectScheme:
+        scheme: https
+        permanent: true
+    csrf:
+      # https://docs.traefik.io/master/middlewares/headers/#hostsproxyheaders®
+      # https://docs.djangoproject.com/en/dev/ref/csrf/#ajax
+      headers:
+        hostsProxyHeaders: ["X-CSRFToken"]
+
+  services:
+    workspace:
+      loadBalancer:
+        servers:
+          - url: http://nginx:8888
+
+    shop:
+      loadBalancer:
+        servers:
+            - url: http://nginx:8880
+
+    admin:
+      loadBalancer:
+        servers:
+            - url: http://nginx:8881
+
+    pickup-portal:
+      loadBalancer:
+        servers:
+            - url: http://nginx:8882
+
+    tracking:
+      loadBalancer:
+        servers:
+          - url: http://nginx:8883
+
+    web:
+      loadBalancer:
+        servers:
+          - url: http://nginx:8884
+
+    rabbitmq:
+      loadBalancer:
+        servers:
+          - url: http://rabbitmq:15672
+
+    grafana:
+      loadBalancer:
+        servers:
+          - url: http://grafana:3000
+
+providers:
+  # https://docs.traefik.io/master/providers/file/
+  file:
+    filename: /etc/traefik/traefik.yml
+    watch: true

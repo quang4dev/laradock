@@ -1,0 +1,60 @@
+log:
+  level: INFO
+
+entryPoints:
+  web:
+    # http
+    address: ":80"
+
+http:
+  routers:
+    api-router:
+      rule: "Host(`api.bbs.local`)"
+      entryPoints:
+        - web
+      middlewares:
+        - csrf
+      service: api
+
+    shop-router:
+      rule: "Host(`admin.bbs.local`)"
+      entryPoints:
+        - web
+      middlewares:
+        - csrf
+      service: shop
+
+    rabbitmq-router:
+      rule: "Host(`rabbitmq.bbs.local`)"
+      entryPoints:
+        - web
+      middlewares:
+        - csrf
+      service: rabbitmq
+
+  middlewares:
+    csrf:
+      # https://docs.traefik.io/master/middlewares/headers/#hostsproxyheaders
+      # https://docs.djangoproject.com/en/dev/ref/csrf/#ajax
+      headers:
+        hostsProxyHeaders: ["X-CSRFToken"]
+
+  services:
+    api:
+      loadBalancer:
+        servers:
+          - url: http://nginx:8888
+    shop:
+      loadBalancer:
+        servers:
+          - url: http://nginx:8880
+    rabbitmq:
+      loadBalancer:
+        servers:
+          - url: http://rabbitmq:15672
+
+providers:
+  # https://docs.traefik.io/master/providers/file/
+  file:
+    filename: /etc/traefik/traefik.yml
+    watch: true
